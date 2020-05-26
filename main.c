@@ -20,8 +20,9 @@ el Ing. Pablo Mazariegos.
 //#include "driverlib/timer.h"
 #include "driverlib/uart.h"
 
-
-
+bool pulsado = 0;
+uint8_t color = 0;
+uint8_t leds = 0;
 
 int main(void)
 {
@@ -38,8 +39,21 @@ int main(void)
     GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
     //Acá se configura la resistencia weak pull up para el pin del botón
     GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
-	while(1){
 
+	while(1){
+	    if (!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)){
+            pulsado = 1;
+	    }
+	    if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)){
+	        SysCtlDelay(100);
+	        if (pulsado == 1){
+	            color++;
+	            color = color%8;
+	            pulsado = 0;
+	        }
+	    }
+	    leds= color<<1;
+	    GPIOPinWrite(GPIO_PORTF_BASE, 0x0E, leds);
 
 	}
 }
