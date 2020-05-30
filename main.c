@@ -23,7 +23,8 @@ el Ing. Pablo Mazariegos.
 #include "driverlib/gpio.h"
 #include "driverlib/uart.h"
 
-
+void sendString(char *a);
+void returnCartnl(void);
 void enviarColorCorrespondiente(void);
 
 bool pulsado = 0;
@@ -81,7 +82,7 @@ int main(void)
 	    if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0)){
 	        SysCtlDelay(100);
 	        if (pulsado2 == 1){
-	            enviarColorCorrespopndiente();
+	            enviarColorCorrespondiente();
 	            pulsado2 = 0;
 	        }
 
@@ -92,9 +93,24 @@ int main(void)
 	}
 }
 
-void enviarColorCorrespopndiente(void){
+void enviarColorCorrespondiente(void){
     switch(color){
     case 1:
         //Enviar
     }
+}
+
+void sendString(char *a){
+    while (UARTBusy(UART1_BASE)){
+        //El programa se detiene mientras UART esté ocupado
+    }
+    while(*a != '\0'){
+        UARTCharPut(UART1_BASE, *a++);
+    }
+    returnCartnl();
+}
+
+void returnCartnl(void){
+    UARTCharPut(UART1_BASE, '\r');
+    UARTCharPut(UART1_BASE, '\n');
 }
