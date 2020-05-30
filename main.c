@@ -22,7 +22,8 @@ el Ing. Pablo Mazariegos.
 #include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
 #include "driverlib/uart.h"
-#define tiempo 100
+#include "driverlib/interrupt.h"
+#define tiempo 10000000
 
 void sendString(char *a);
 void returnCartnl(void);
@@ -39,8 +40,6 @@ int main(void)
     SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
     //Se configura el reloj para que tenga una frecuencia de 40MHz
     //Es necesario desbloquear el botón SW2
-    GPIO_PORTF_LOCK_R = 0x4C4F434B;
-    GPIO_PORTF_CR_R = 0X00000001;
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     //Se activa el periférico del puerto F
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF)){
@@ -50,8 +49,10 @@ int main(void)
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
     //Es necesario configurar el pin del botón SW1 que es el pin 4 del puerto F como input
     GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
+    GPIO_PORTF_LOCK_R = 0x4C4F434B;
+    GPIO_PORTF_CR_R = 0x1;
     GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_0);
-    //Acá se configura la resistencia weak pull up para el pin del botón
+    //Acá se configura la resistencia weak pull up para el pi   n del botón
     GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
     GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_0, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
 
@@ -64,9 +65,7 @@ int main(void)
     UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
     UARTConfigSetExpClk(UART1_BASE, 16000000, 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
     UARTEnable(UART1_BASE);
-    //comando AT
-    //delay
-
+    sendString("AT");
 	while(1){
 	    if (!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0)){
 	        pulsado2 = 1;
@@ -99,21 +98,47 @@ int main(void)
 
 void enviarColorCorrespondiente(void){
     esp3286_connect();
+    SysCtlDelay(tiempo);
     switch(color){
+    case 0:
+        sendString("AT+CIPSEND=165");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 35\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=0&color=Negro\r\n");
+        break;
     case 1:
         sendString("AT+CIPSEND=164");
         SysCtlDelay(tiempo);
-        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: */*\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\ncarnet=18187&id_color=1&color=Rojo");
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=1&color=Rojo\r\n");
         break;
     case 2:
         sendString("AT+CIPSEND=164");
         SysCtlDelay(tiempo);
-        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: */*\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\ncarnet=18187&id_color=2&color=Azul");
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=2&color=Azul\r\n");
         break;
     case 3:
         sendString("AT+CIPSEND=167");
         SysCtlDelay(tiempo);
-        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: */*\r\nContent-Length: 37\r\nContent-Type: application/x-www-form-urlencoded\r\n\ncarnet=18187&id_color=2&color=Violeta");
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 37\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=3&color=Violeta\r\n");
+        break;
+    case 4:
+        sendString("AT+CIPSEND=165");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 35\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=4&color=Verde\r\n");
+        break;
+    case 5:
+        sendString("AT+CIPSEND=168");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 38\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=5&color=Amarillo\r\n");
+        break;
+    case 6:
+        sendString("AT+CIPSEND=168");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 38\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=6&color=Turquesa\r\n");
+        break;
+    case 7:
+        sendString("AT+CIPSEND=166");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 36\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=7&color=Blanco\r\n");
         break;
     }
 }
