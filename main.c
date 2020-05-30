@@ -22,10 +22,12 @@ el Ing. Pablo Mazariegos.
 #include "driverlib/pin_map.h"
 #include "driverlib/gpio.h"
 #include "driverlib/uart.h"
+#define tiempo 100
 
 void sendString(char *a);
 void returnCartnl(void);
 void enviarColorCorrespondiente(void);
+void esp3286_connect(void);
 
 bool pulsado = 0;
 bool pulsado2 = 0;
@@ -47,9 +49,11 @@ int main(void)
     //Luego se activan como outputs los pines 1 2 y 3 (LEDS del RGB)
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
     //Es necesario configurar el pin del botón SW1 que es el pin 4 del puerto F como input
-    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4| GPIO_PIN_0);
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_4);
+    GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_0);
     //Acá se configura la resistencia weak pull up para el pin del botón
-    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4 | GPIO_PIN_0, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_0, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
 
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
@@ -94,9 +98,23 @@ int main(void)
 }
 
 void enviarColorCorrespondiente(void){
+    esp3286_connect();
     switch(color){
     case 1:
-        //Enviar
+        sendString("AT+CIPSEND=164");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: */*\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\ncarnet=18187&id_color=1&color=Rojo");
+        break;
+    case 2:
+        sendString("AT+CIPSEND=164");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: */*\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\ncarnet=18187&id_color=2&color=Azul");
+        break;
+    case 3:
+        sendString("AT+CIPSEND=167");
+        SysCtlDelay(tiempo);
+        sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: */*\r\nContent-Length: 37\r\nContent-Type: application/x-www-form-urlencoded\r\n\ncarnet=18187&id_color=2&color=Violeta");
+        break;
     }
 }
 
@@ -107,6 +125,11 @@ void sendString(char *a){
     while(*a != '\0'){
         UARTCharPut(UART1_BASE, *a++);
     }
+    returnCartnl();
+}
+
+void esp3286_connect(void){
+    sendString("AT+CIPSTART=\"TCP\",\"192.168.0.15\",80");
     returnCartnl();
 }
 
