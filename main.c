@@ -56,28 +56,32 @@ int main(void)
     GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
     GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_0, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
 
-
+    //Se configura el UART1 para comunicarse con el esp3286
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+    //Se usan los pines PC4 y PC5 como RX y TX respectivamente
     GPIOPinConfigure(GPIO_PC4_U1RX);
     GPIOPinConfigure(GPIO_PC5_U1TX);
+    //Se les asigna el módulo UART1 a los pines
     GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_4 | GPIO_PIN_5);
     UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
+    //Se configura el Baud Rate de 115200
     UARTConfigSetExpClk(UART1_BASE, 16000000, 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
     UARTEnable(UART1_BASE);
+    //Función para verificar con la consola que esté funcionando el esp3286
     sendString("AT");
 	while(1){
-	    if (!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0)){
+	    if (!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0)){     //Antirrebote del botón SW2
 	        pulsado2 = 1;
 	    }
-	    if (!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)){
+	    if (!GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)){     //Antirrebote del botón SW1
             pulsado = 1;
 	    }
 
 	    if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4)){
 	        SysCtlDelay(100);
 	        if (pulsado == 1){
-	            color++;
+	            color++;                                    //Aumentar el color a mostrar
 	            color = color%8;
 	            pulsado = 0;
 	        }
@@ -85,57 +89,58 @@ int main(void)
 	    if (GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_0)){
 	        SysCtlDelay(100);
 	        if (pulsado2 == 1){
-	            enviarColorCorrespondiente();
+	            enviarColorCorrespondiente();               //Ir a rutina para enviar el color actual
 	            pulsado2 = 0;
 	        }
 
 	    }
-	    leds= color<<1;
-	    GPIOPinWrite(GPIO_PORTF_BASE, 0x0E, leds);
+	    leds= color<<1;                                 //El shift coloca el número del color en los pines del
+    GPIOPinWrite(GPIO_PORTF_BASE, 0x0E, leds);          //led RGB para mostrarlo
 
 	}
 }
 
 void enviarColorCorrespondiente(void){
-    esp3286_connect();
-    SysCtlDelay(tiempo);
+    esp3286_connect();                  //Se conecta al servidor antes de enviar un color
+    SysCtlDelay(tiempo);                //Espera tiempo suficiente para que se haga la conexión
     switch(color){
-    case 0:
+    //En las siguientes funciones se envía el POST REQUEST de cada color, con su longitud de caracteres respectiva
+    case 0:     //Color negro
         sendString("AT+CIPSEND=165");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 35\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=0&color=Negro\r\n");
         break;
-    case 1:
+    case 1:     //Color rojo
         sendString("AT+CIPSEND=164");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=1&color=Rojo\r\n");
         break;
-    case 2:
+    case 2:     //Color Azul
         sendString("AT+CIPSEND=164");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 34\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=2&color=Azul\r\n");
         break;
-    case 3:
+    case 3:     //Color Violeta
         sendString("AT+CIPSEND=167");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 37\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=3&color=Violeta\r\n");
         break;
-    case 4:
+    case 4:     //Color Verde
         sendString("AT+CIPSEND=165");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 35\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=4&color=Verde\r\n");
         break;
-    case 5:
+    case 5:     //Color Amarillo
         sendString("AT+CIPSEND=168");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 38\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=5&color=Amarillo\r\n");
         break;
-    case 6:
+    case 6:     //Color Magenta
         sendString("AT+CIPSEND=168");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 38\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=6&color=Turquesa\r\n");
         break;
-    case 7:
+    case 7:     //Color Blanco
         sendString("AT+CIPSEND=166");
         SysCtlDelay(tiempo);
         sendString("POST /index.php HTTP/1.0\r\nHost: 192.168.0.15\r\nAccept: /\r\nContent-Length: 36\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\ncarnet=18187&id_color=7&color=Blanco\r\n");
@@ -143,22 +148,22 @@ void enviarColorCorrespondiente(void){
     }
 }
 
-void sendString(char *a){
+void sendString(char *a){                   //Función para enviar caracteres uno por uno de una string
     while (UARTBusy(UART1_BASE)){
-        //El programa se detiene mientras UART esté ocupado
+                                            //El programa se detiene mientras UART esté ocupado
     }
     while(*a != '\0'){
-        UARTCharPut(UART1_BASE, *a++);
+        UARTCharPut(UART1_BASE, *a++);         //Se va avanzando en el siguiente caracter
     }
-    returnCartnl();
+    returnCartnl();                          //Se imprime el retorno del carro al final de cada linea
 }
 
-void esp3286_connect(void){
+void esp3286_connect(void){     //La conexión que se hace al servidor siempre antes de enviar datos
     sendString("AT+CIPSTART=\"TCP\",\"192.168.0.15\",80");
     returnCartnl();
 }
 
 void returnCartnl(void){
-    UARTCharPut(UART1_BASE, '\r');
+    UARTCharPut(UART1_BASE, '\r');  //Se retorna el carro y se imprime nueva línea en la consola
     UARTCharPut(UART1_BASE, '\n');
 }
